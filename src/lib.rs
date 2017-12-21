@@ -24,14 +24,13 @@
 extern crate gtrie;
 extern crate libc;
 
-use libc::{c_char, uint32_t};
-use std::ffi::CStr;
+use libc::c_char;
+use std::ffi::{CStr, CString};
 
 
 fn ptr_to_str<'a>(ptr: *const c_char) -> &'a str {
     let c_str = unsafe {
-        assert!(!ptr.is_null());
-        CStr::from_ptr(ptr)
+        assert!(!ptr.is_null()); CStr::from_ptr(ptr)
     };
 
     c_str.to_str().unwrap()
@@ -59,22 +58,22 @@ pub extern fn dictionary_free(ptr: *mut gtrie::Trie<char, String>) {
 
 
 #[no_mangle]
-pub extern fn add_keyword(
+pub extern fn dictionary_add(
     dictionary_ptr: *mut gtrie::Trie<char, String>,
     keyword_ptr: *const c_char,
-    synonim_ptr: *const c_char,
+    synonym_ptr: *const c_char,
 ) {
     let dictionary = unsafe {
         assert!(!dictionary_ptr.is_null());
         &mut *dictionary_ptr
     };
 
-    dictionary.insert(ptr_to_str(keyword_ptr).chars(), ptr_to_string(synonim_ptr));
+    dictionary.insert(ptr_to_str(keyword_ptr).chars(), ptr_to_string(synonym_ptr));
 }
 
 
 #[no_mangle]
-pub extern fn contains_keyword(
+pub extern fn dictionary_contains(
     dictionary_ptr: *mut gtrie::Trie<char, String>,
     keyword_ptr: *const c_char,
 ) -> bool {
@@ -84,4 +83,22 @@ pub extern fn contains_keyword(
     };
 
     dictionary.contains_key(ptr_to_str(keyword_ptr).chars())
+}
+
+
+#[no_mangle]
+pub extern fn dictionary_synonym(
+    dictionary_ptr: *mut gtrie::Trie<char, String>,
+    keyword_ptr: *const c_char,
+) -> *const c_char {
+    let dictionary = unsafe {
+        assert!(!dictionary_ptr.is_null());
+        &mut *dictionary_ptr
+    };
+
+
+    match dictionary.get_value(ptr_to_str(keyword_ptr).chars()) {
+        Some(value) => CString::new(value.as_bytes()).unwrap().into_raw(),
+        None => CString::new("").unwrap().into_raw()
+    }
 }

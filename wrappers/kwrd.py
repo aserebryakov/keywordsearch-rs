@@ -16,10 +16,13 @@ lib.dictionary_new.restype = POINTER(DictionaryS)
 
 lib.dictionary_free.argtypes = (POINTER(DictionaryS), )
 
-lib.add_keyword.argtypes = (POINTER(DictionaryS), c_char_p, c_char_p, )
+lib.dictionary_add.argtypes = (POINTER(DictionaryS), c_char_p, c_char_p, )
 
-lib.contains_keyword.argtypes = (POINTER(DictionaryS), c_char_p)
-lib.contains_keyword.restype = bool
+lib.dictionary_contains.argtypes = (POINTER(DictionaryS), c_char_p)
+lib.dictionary_contains.restype = bool
+
+lib.dictionary_synonym.argtypes = (POINTER(DictionaryS), c_char_p)
+lib.dictionary_synonym.restype = c_char_p
 
 
 class Dictionary:
@@ -32,14 +35,19 @@ class Dictionary:
     def __exit__(self, exc_type, exc_value, traceback):
         lib.dictionary_free(self.obj)
 
-    def add_keyword(self, keyword, synonym):
-        lib.add_keyword(self.obj, keyword.encode("utf-8"), synonym.encode("utf-8"))
+    def add(self, keyword, synonym):
+        lib.dictionary_add(self.obj, keyword.encode("utf-8"), synonym.encode("utf-8"))
 
-    def contains_keyword(self, keyword):
-        return lib.contains_keyword(self.obj, keyword.encode("utf-8"))
+    def contains(self, keyword):
+        return lib.dictionary_contains(self.obj, keyword.encode("utf-8"))
+
+    def synonym(self, keyword):
+        return lib.dictionary_synonym(self.obj, keyword.encode("utf-8"))
 
 
 with Dictionary() as dictionary:
-    dictionary.add_keyword("hello", "world")
-    print("{}".format(dictionary.contains_keyword("hello")))
-    print("{}".format(dictionary.contains_keyword("hllo")))
+    dictionary.add("hello", "world")
+    print("{}".format(dictionary.contains("hello")))
+    print("{}".format(dictionary.contains("hllo")))
+    print("{}".format(dictionary.synonym("hello")))
+    print("{}".format(dictionary.synonym("hllo")))
